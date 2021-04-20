@@ -1,0 +1,25 @@
+{
+  "name": "mini-entry",
+  "version": "0.0.1",
+  "description": "解析小程序json",
+  "main": "index.js",
+  "keywords": [
+    "mini",
+    "wechat",
+    "alipay",
+    "miniprogram"
+  ],
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bugszhou/mini-entry.git"
+  },
+  "author": "bugszhou",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/bugszhou/mini-entry/issues"
+  },
+  "homepage": "https://github.com/bugszhou/mini-entry#readme"
+}
