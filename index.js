@@ -2,7 +2,7 @@
  * @Author: youzhao.zhou
  * @Date: 2021-04-19 15:21:42
  * @Last Modified by: youzhao.zhou
- * @Last Modified time: 2021-04-20 16:26:26
+ * @Last Modified time: 2021-04-21 17:07:07
  * @Description 获取webpack入口
  *
  * 1. 先解析app.json，获取主包和子包的页面路径
@@ -23,7 +23,14 @@ const {
 } = require("path");
 const globby = require("globby");
 const jsonfile = require("jsonfile");
+const isNodeModule = require("./utils/isNodeModule");
+const isNodeModuleInPath = require("./utils/isNodeModuleInPath");
+const generateEntryName = require("./utils/generateEntryName");
+const generateNodeModuleEntry = require("./utils/generateNodeModuleEntry");
 
+/**
+ * 缓存json配置文件
+ */
 const entryConfigPath = new Set();
 const hasParsedEntryConfigPath = new Set();
 
@@ -48,33 +55,12 @@ let config = {};
 // };
 
 /**
- * 解析获取入口路径
- * @param {Object} options 格式参考demoConfig
- */
-async function getEntry(options) {
-  entryConfigPath.clear();
-  hasParsedEntryConfigPath.clear();
-
-  config = options;
-
-  const paths = await globby(Object.values(config.entry));
-
-  if (paths.length === 0) {
-    throw new Error("Not Found Entry File");
-  }
-
-  const entry = await getAllEntry(paths);
-  console.log(entry);
-
-  return entry;
-}
-
-/**
- * 解析所有入口的json文件
+ * 递归生成所有的入口文件
  * @param {Array} configFiles
  * @returns
  */
 async function getAllEntry(configFiles) {
+  // 复制数组
   const tmpConfigFiles = configFiles.splice(0);
 
   if (tmpConfigFiles.length === 0) {
@@ -83,8 +69,10 @@ async function getAllEntry(configFiles) {
 
   const appEntryFilePath = tmpConfigFiles.shift();
 
+  // 解析app.json文件，获取app.json中配置的页面和组件信息
   const appEntry = await parseApp(appEntryFilePath);
-  const componentEntry = parsePageAndComponent(entryConfigPath);
+  // 解析app.json中获取到的所有json配置文件
+  const componentEntry = parseComponentInPageAndComponent(entryConfigPath);
 
   const entry = {
     ...getAppEntry(appEntryFilePath),
@@ -100,6 +88,11 @@ async function getAllEntry(configFiles) {
   };
 }
 
+/**
+ * 生成入口app配置
+ * @param {Array} configFile
+ * @returns
+ */
 function getAppEntry(configFile) {
   const absolutePath = join(process.cwd(), configFile);
 
@@ -110,6 +103,11 @@ function getAppEntry(configFile) {
   };
 }
 
+/**
+ * 解析app.json中的page和components
+ * @param {Array} configFile
+ * @returns
+ */
 async function parseApp(configFile) {
   const configData = await jsonfile.readFile(configFile);
   const mainPages = parsePages(configData.pages);
@@ -131,7 +129,12 @@ async function parseApp(configFile) {
   return pages;
 }
 
-function parsePageAndComponent(configPath) {
+/**
+ * 解析页面和组件中使用到的组件
+ * @param {Array} configPath
+ * @returns
+ */
+function parseComponentInPageAndComponent(configPath) {
   if (!(configPath instanceof Set)) {
     return {};
   }
@@ -183,20 +186,34 @@ function parsePages(pages) {
 
   const entry = {};
   pages.forEach((page) => {
+    let entryName = generateEntryName(page);
+
+    if (isNodeModuleInPath(page)) {
+      const nodeModuleEntry = generateNodeModuleEntry(
+        page,
+        config.compiledSuffix,
+      );
+      entryName = nodeModuleEntry.entryName;
+      entryConfigPath.add(nodeModuleEntry.json);
+      entry[entryName] = nodeModuleEntry.entry;
+
+      return;
+    }
+
     let scriptPath = getAbsolutePath(`${page}.${config.entrySuffix.js}`);
-    entry[page] = [getAbsolutePath(`${page}.${config.entrySuffix.xml}`)];
+    entry[entryName] = [getAbsolutePath(`${page}.${config.entrySuffix.xml}`)];
 
     const pageJsonPath = getAbsolutePath(`${page}.json`);
     if (fs.existsSync(pageJsonPath)) {
       entryConfigPath.add(pageJsonPath);
-      entry[page].push(pageJsonPath);
+      entry[entryName].push(pageJsonPath);
     }
 
     if (!fs.existsSync(scriptPath)) {
       scriptPath = getAbsolutePath(`${page}.js`);
     }
 
-    entry[page].push(scriptPath);
+    entry[entryName].push(scriptPath);
   });
 
   return entry;
@@ -235,6 +252,13 @@ function parseComponents(componentsUserPath, components) {
   const filterSet = new Set();
   const componentPathList = Object.values(components)
     .map((pathUrl) => {
+      // 检查是不是node_modules
+      if (isNodeModule(pathUrl)) {
+        return join("node_modules", pathUrl.replace(/^node_modules/, ""));
+      }
+      return normalize(pathUrl);
+    })
+    .map((pathUrl) => {
       return normalize(pathUrl);
     })
     .map((pathUrl) => {
@@ -242,10 +266,16 @@ function parseComponents(componentsUserPath, components) {
         return pathUrl.replace(/^\//, "");
       }
 
-      return relative(
-        getAbsolutePath(""),
-        getAbsolutePathWithBasePath(componentsUserPath, pathUrl),
+      const componentAbsolutePath = getAbsolutePathWithBasePath(
+        componentsUserPath,
+        pathUrl,
       );
+
+      const baseUrl = isNodeModuleInPath(componentAbsolutePath)
+        ? process.cwd()
+        : getAbsolutePath("");
+
+      return relative(baseUrl, componentAbsolutePath);
     })
     .filter((pathUrl) => {
       if (filterSet.has(pathUrl)) {
@@ -290,12 +320,38 @@ function getAbsolutePathWithBasePath(basePath, pathUrl) {
     return getAbsolutePath(pathUrl.replace(/^\//, ""));
   }
 
-  const base = isAbsolute(basePath) ? basePath : getAbsolutePath(basePath);
+  let base = isAbsolute(basePath) ? basePath : getAbsolutePath(basePath);
 
-  if (fs.statSync(base).isFile) {
+  if (isNodeModuleInPath(pathUrl)) {
+    base = process.cwd();
+  }
+
+  if (fs.statSync(base).isFile()) {
     return join(dirname(base), pathUrl);
   }
+
   return join(base, pathUrl);
+}
+
+/**
+ * 解析获取入口路径
+ * @param {Object} options 格式参考demoConfig
+ */
+async function getEntry(options) {
+  entryConfigPath.clear();
+  hasParsedEntryConfigPath.clear();
+
+  config = options;
+
+  const paths = await globby(Object.values(config.entry));
+
+  if (paths.length === 0) {
+    throw new Error("Not Found Entry File");
+  }
+
+  const entry = await getAllEntry(paths);
+
+  return entry;
 }
 
 module.exports = getEntry;
