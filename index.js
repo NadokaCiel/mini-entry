@@ -2,7 +2,7 @@
  * @Author: youzhao.zhou
  * @Date: 2021-04-19 15:21:42
  * @Last Modified by: youzhao.zhou
- * @Last Modified time: 2021-04-21 17:07:07
+ * @Last Modified time: 2021-04-21 17:26:09
  * @Description 获取webpack入口
  *
  * 1. 先解析app.json，获取主包和子包的页面路径
@@ -70,7 +70,7 @@ async function getAllEntry(configFiles) {
   const appEntryFilePath = tmpConfigFiles.shift();
 
   // 解析app.json文件，获取app.json中配置的页面和组件信息
-  const appEntry = await parseApp(appEntryFilePath);
+  const appEntry = parseApp(appEntryFilePath);
   // 解析app.json中获取到的所有json配置文件
   const componentEntry = parseComponentInPageAndComponent(entryConfigPath);
 
@@ -80,7 +80,7 @@ async function getAllEntry(configFiles) {
     ...componentEntry,
   };
 
-  const result = await getAllEntry(tmpConfigFiles);
+  const result = getAllEntry(tmpConfigFiles);
 
   return {
     ...entry,
@@ -109,7 +109,7 @@ function getAppEntry(configFile) {
  * @returns
  */
 async function parseApp(configFile) {
-  const configData = await jsonfile.readFile(configFile);
+  const configData = jsonfile.readFileSync(configFile);
   const mainPages = parsePages(configData.pages);
   const subPages = parseSubPages(configData.subpackages);
 
@@ -337,19 +337,19 @@ function getAbsolutePathWithBasePath(basePath, pathUrl) {
  * 解析获取入口路径
  * @param {Object} options 格式参考demoConfig
  */
-async function getEntry(options) {
+function getEntry(options) {
   entryConfigPath.clear();
   hasParsedEntryConfigPath.clear();
 
   config = options;
 
-  const paths = await globby(Object.values(config.entry));
+  const paths = globby.sync(Object.values(config.entry));
 
   if (paths.length === 0) {
     throw new Error("Not Found Entry File");
   }
 
-  const entry = await getAllEntry(paths);
+  const entry = getAllEntry(paths);
 
   return entry;
 }
