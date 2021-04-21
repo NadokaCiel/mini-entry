@@ -2,7 +2,7 @@
   "name": "mini-entry",
   "version": "0.0.5",
   "description": "解析小程序json",
-  "main": "index.js",
+  "main": "lib/index.js",
   "keywords": [
     "mini",
     "wechat",

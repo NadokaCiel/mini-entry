@@ -35,3 +35,7 @@ type IMiniEntryReturn = {
 };
 
 declare function getEntry(options: IMiniEntryOptions): IMiniEntryReturn;
+
+declare module "mini-entry" {
+  export default getEntry;
+}

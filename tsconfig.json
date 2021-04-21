@@ -19,5 +19,5 @@
     "lib": ["esnext"]
   },
   "exclude": ["node_modules"],
-  "include": ["src/**/*"]
+  "include": ["lib/**/*"]
 }
