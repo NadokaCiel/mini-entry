@@ -2,7 +2,7 @@
  * @Author: youzhao.zhou
  * @Date: 2021-04-19 15:21:42
  * @Last Modified by: youzhao.zhou
- * @Last Modified time: 2021-04-21 17:26:09
+ * @Last Modified time: 2021-04-21 17:58:39
  * @Description 获取webpack入口
  *
  * 1. 先解析app.json，获取主包和子包的页面路径
@@ -59,7 +59,7 @@ let config = {};
  * @param {Array} configFiles
  * @returns
  */
-async function getAllEntry(configFiles) {
+function getAllEntry(configFiles) {
   // 复制数组
   const tmpConfigFiles = configFiles.splice(0);
 
@@ -108,7 +108,7 @@ function getAppEntry(configFile) {
  * @param {Array} configFile
  * @returns
  */
-async function parseApp(configFile) {
+function parseApp(configFile) {
   const configData = jsonfile.readFileSync(configFile);
   const mainPages = parsePages(configData.pages);
   const subPages = parseSubPages(configData.subpackages);
