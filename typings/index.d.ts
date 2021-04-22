@@ -30,7 +30,7 @@ interface IMiniEntryOptions {
   };
 }
 
-type IMiniEntryReturn = {
+interface IMiniEntryReturn {
   /**
    * 所有入口
    */
@@ -40,14 +40,14 @@ type IMiniEntryReturn = {
   /**
    * 所有json文件路径
    */
-  jsonFile: {
+  jsonFiles: {
     [entryName: string]: string[];
   };
   /**
    * 子包所在文件夹
    */
   subPackagesDir: string[];
-};
+}
 
 declare function getEntry(options: IMiniEntryOptions): IMiniEntryReturn;
 
