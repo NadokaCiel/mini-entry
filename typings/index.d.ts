@@ -13,7 +13,7 @@ interface IMiniEntryOptions {
    */
   entrySuffix: {
     js: "js" | "ts";
-    miniJs: "wxs" | "sjs";
+    miniJs?: "wxs" | "sjs";
     xml: "wxml" | "axml" | "html";
 
     [key: string]: any;
@@ -24,10 +24,14 @@ interface IMiniEntryOptions {
   compiledSuffix: {
     js: string;
     css: string;
-    miniJs: string;
+    miniJs?: string;
     xml: string;
     [key: string]: any;
   };
+  /**
+   * 忽略文件
+   */
+  ignoreEntry: string[];
 }
 
 interface IMiniEntryReturn {
