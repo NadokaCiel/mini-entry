@@ -31,7 +31,7 @@ interface IMiniEntryOptions {
   /**
    * 忽略文件
    */
-  ignoreEntry: string[];
+  ignoreEntry?: string[];
 }
 
 interface IMiniEntryReturn {
