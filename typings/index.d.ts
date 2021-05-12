@@ -15,7 +15,8 @@ interface IMiniEntryOptions {
     js: "js" | "ts";
     miniJs?: "wxs" | "sjs";
     xml: "wxml" | "axml" | "html";
-
+    css?: string;
+    
     [key: string]: any;
   };
   /**
