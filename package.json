@@ -1,6 +1,6 @@
 {
   "name": "mini-entry",
-  "version": "0.3.3",
+  "version": "0.4.0",
   "description": "解析小程序json",
   "main": "lib/index.js",
   "keywords": [
